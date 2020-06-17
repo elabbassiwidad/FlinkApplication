@@ -95,10 +95,15 @@
                 }
                 }},
                 {
-                "name": "Timestamp",
+                "name": "Timestamp","type": {
                 "type": "long",
-                "logicalType": "timestamp-millis"
+                "arg.properties":{
+                "iteration":{
+                "start" : 1583024400,
+                "restart": 1588294861,
+                "step": 120
+                }}
                 }
-
+                }
         ]
 }
