@@ -34,6 +34,12 @@
             <artifactId>connect-api</artifactId>
             <version>2.3.1</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-connector-elasticsearch5 -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-elasticsearch7_2.11</artifactId>
+            <version>1.10.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.kafka</groupId>
