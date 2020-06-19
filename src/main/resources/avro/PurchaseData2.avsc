@@ -1,0 +1,75 @@
+{
+        "namespace": "com.SensorData",
+        "name": "PurchaseData",
+        "type": "record",
+        "fields": [
+        {
+                        "name": "Seller_Name","type": {
+                        "type": "string",
+                        "arg.properties":{
+                        "options": [ "Seller_1", "Seller_2", "Seller_3", "Seller_4"
+                        ]}
+                        }},
+                         {"name": "productid",
+                         "type": {
+                         "type": "long",
+                         "arg.properties": {
+                         "iteration":{
+                         "start" : 1,
+                         "restart": 30
+                         }}
+                         }
+                         },
+                        {
+                        "name": "Product_Category","type": {
+                        "type": "string",
+                        "arg.properties":{
+                        "options": [ "Accessories", "Shoes & Bags", "Women", "Kids", "Men", "Home Care"
+                        ]}
+                        }},
+                        {
+                        "name": "Number_Available_stock",
+                        "type": {
+                        "type": "int",
+                        "arg.properties": {
+                         "range":{
+                         "min": 0,
+                         "max": 100
+                        }
+                        }
+                        }},
+                        {
+                        "name": "Payment_Method","type": {
+                        "type": "string",
+                        "arg.properties":{
+                        "options": [ "Cash", "Mobile Payment", "Credit Card"
+                        ]}
+                        }},
+                        {"name": "Amount",
+                         "type": {
+                         "type":"int",
+                         "arg.properties":{
+                         "range":{
+                         "min": 3,
+                         "max": 200
+                         }
+                         }
+                         }},
+                         {"name": "Loyalty_Card","type": {
+                         "type": "string",
+                         "arg.properties":{
+                         "options": [ "true" , "false" ]
+                         }}},
+                         {
+                           "name": "Timestamp","type": {
+                           "type": "long",
+                           "arg.properties":{
+                           "iteration":{
+                           "start" : 1583024400,
+                           "restart": 1588294861,
+                           "step": 120
+                           }}
+                           }
+                           }
+                                 ]
+                         }
