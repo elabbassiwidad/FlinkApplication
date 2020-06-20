@@ -49,7 +49,7 @@ public class Query2 {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         env.getConfig().setGlobalJobParameters(parameterTool);
-        // we set the time characteristic to include an event in a window |event time
+        // we set the time characteristic, normally we need to use the event Time , but since the generation of Timestamps in the differents streams are nor ordered, I worked with processing time.
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         // Define Kafka Properties
@@ -59,16 +59,10 @@ public class Query2 {
         props.setProperty("group.id", "test");
         //String schemaRegistryUrl = parameterTool.getRequired("schema-registry-url");
 
-        //1st query : Mall Foot Traffic-2 hours, each customer will be identified by it's Mac address
+        //1st query : In-mall Proximity Traffic -per zone(lat,long), the goal is the identify the foot traffic pattern
 
-        DataStream<Zone1_Sensors> zone1 = env.addSource(new FlinkKafkaConsumer<>("1", ConfluentRegistryAvroDeserializationSchema.forSpecific(Zone1_Sensors.class, "http://schema-registry:8081") , props)
-                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Zone1_Sensors>() {
-                    @Override
-                    public long extractAscendingTimestamp(Zone1_Sensors element) {
-                        return element.getTimestamp();
-                    }
-                }));
-
+        DataStream<Zone1_Sensors> zone1 = env.addSource(new FlinkKafkaConsumer<>("zone1", ConfluentRegistryAvroDeserializationSchema.forSpecific(Zone1_Sensors.class, "http://schema-registry:8081") , props);
+                                                        
         DataStream<Tuple2<String,Integer>> proximityTraffic = zone1.keyBy("Timestamp").window(TumblingProcessingTimeWindows.of(Time.minutes(30))).process(new org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction<Zone1_Sensors, Tuple2<String,Integer>, Tuple, TimeWindow>() {
             @Override
             public void process(Tuple tuple, Context context, Iterable<Zone1_Sensors> input, Collector<Tuple2<String,Integer>> out) throws Exception {
@@ -100,9 +94,7 @@ public class Query2 {
             }
         });
 
-        // Control Visitors Traffic : if number of visitors exceeds 50 in some area, we Send an Advertisement to the Customers with Loyalty Programs or that dispose of The Mall Application
-
-        // Send an Advertisement to the Customers with Loyalty Programs or that dispose of The Mall Application
+        // Control Visitors Traffic : if number of visitors exceeds -x- in some area, we Send an Advertisement to the Customers with Loyalty Programs or those who dispose of The Mall Application
 
         DataStream<Tuple3<Integer,String,String>> trafficJam = proximityTraffic.keyBy(0).window(TumblingProcessingTimeWindows.of(Time.minutes(20))).process(new ProcessWindowFunction<Tuple2<String, Integer>, Tuple3<Integer, String, String>, Tuple, TimeWindow>() {
             @Override
@@ -115,10 +107,10 @@ public class Query2 {
                         traffic.f0 = in.f1;
                         traffic.f1 = in.f0;
                         // Construct data
-                        String apiKey = "apikey=" + "Tj/c/FveX0s-dRGHZGzi16ODdBjo4XKoiXRspYXetM";
+                        String apiKey = "apikey=" + "xxxxxxxxxxxxxxxxxxxxxxxx";
                         String message = "&message=" + "Up to 70% Off on Kids Wear at H&M";
                         String sender = "&sender=" + "Mall Discounts";
-                        String numbers = "&numbers=" + "34663514868";
+                        String numbers = "&numbers=" + "xxxxxxxxxx";
 
                         // Send data
                         HttpURLConnection conn = (HttpURLConnection) new URL("https://api.txtlocal.com/send/?").openConnection();
@@ -153,7 +145,7 @@ public class Query2 {
         List<HttpHost> httpHosts = new ArrayList<>();
         httpHosts.add(new HttpHost("172.18.0.9", 9200, "http"));
 
-        // create Index for category count
+        // create Index for in-mall proximity traffic
         ElasticsearchSink.Builder<Tuple2<String,Integer>> esSinkBuilder = new ElasticsearchSink.Builder<>(
                 httpHosts,
                 new ElasticsearchSinkFunction<Tuple2<String,Integer>>() {
@@ -178,7 +170,7 @@ public class Query2 {
         proximityTraffic.addSink(esSinkBuilder.build());
 
 
-        // create Index for category count
+        // create Index for traffic jam
         ElasticsearchSink.Builder<Tuple3<Integer,String,String>> esSinkBuilder1 = new ElasticsearchSink.Builder<>(
                 httpHosts,
                 new ElasticsearchSinkFunction<Tuple3<Integer,String,String>>() {
@@ -204,7 +196,6 @@ public class Query2 {
         esSinkBuilder1.setBulkFlushMaxActions(1);
         trafficJam.addSink(esSinkBuilder1.build());
 
-        //proximityTraffic.writeAsText("/opt/flink/zone1");
         env.execute();
 
     }
