@@ -35,7 +35,7 @@ public class Query3 {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         env.getConfig().setGlobalJobParameters(parameterTool);
-        // we set the time characteristic to include an event in a specific window
+        // we set the time characteristic 
         env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
 
         // Define Kafka Properties
@@ -43,9 +43,9 @@ public class Query3 {
         props.setProperty("bootstrap.servers", "kafka:9092");
         props.setProperty("schema.registry.url", "schema-registry:8081");
         props.setProperty("group.id", "RetailProject");
-
-        //1st query : Mall Foot Traffic-2 hours, each customer will be identified by it's Mac address
-        //
+        
+        //In-store Analytics
+        //Streams of Purchase data comming from different POS
 
         DataStream<PurchaseData> purchaseStream = env.addSource(new FlinkKafkaConsumer<>("POS1", ConfluentRegistryAvroDeserializationSchema.forSpecific(PurchaseData.class, "http://schema-registry:8081"), props));
         DataStream<PurchaseData> purchaseStream2 = env.addSource(new FlinkKafkaConsumer<>("POS2", ConfluentRegistryAvroDeserializationSchema.forSpecific(PurchaseData.class, "http://schema-registry:8081"), props));
@@ -56,10 +56,11 @@ public class Query3 {
         DataStream<Tuple3<String,String,Integer>> categoryCount = purchaseStream2.keyBy("Product_Category").window(TumblingProcessingTimeWindows.of(Time.minutes(15))).process(new org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction<PurchaseData, Tuple3<String, String, Integer>, Tuple, TimeWindow>() {
             @Override
             public void process(Tuple tuple, Context context, Iterable<PurchaseData> input, Collector<Tuple3<String, String, Integer>> out) throws Exception {
+                
                 int count = 0;
                 String category = new String() ;
                 String date = new String() ; ;
-                //SimpleDateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
                 for (PurchaseData in: input) {
                     count++;
                     category = in.getProductCategory();
@@ -75,6 +76,7 @@ public class Query3 {
             public void process(Tuple tuple, Context context, Iterable<PurchaseData> input, Collector<Tuple2<String, Integer>> out) throws Exception {
                 int count = 0;
                 String payment = new String() ;
+                
                 for (PurchaseData in: input) {
                     count++;
                     payment= in.getPaymentMethod();
@@ -109,12 +111,12 @@ public class Query3 {
                         out.collect(new Tuple3<Long, Integer, String>(result.f0,result.f1,result.f2));
                     }
                 });
+        
         //Total sales
         DataStream<Tuple2<String,Integer>> totalSales = purchaseStream2.keyBy("Product_Category").timeWindow(Time.minutes(30)).process(new ProcessWindowFunction<PurchaseData, Tuple2<String, Integer>, Tuple, TimeWindow>() {
             @Override
             public void process(Tuple tuple, Context context, Iterable<PurchaseData> elements, Collector<Tuple2<String, Integer>> out) throws Exception {
                 int totalSales = 0;
-              //  SimpleDateFormat dateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String  date = new String() ;
 
                 for (PurchaseData in: elements) {
